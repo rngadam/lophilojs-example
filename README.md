@@ -1,4 +1,1 @@
-lophilojs
-=========
-
-Lophilo sample scripts
+# Welcome to your new realtime app
