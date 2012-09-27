@@ -7,8 +7,14 @@
   </head>
   <body>
     <div class="well">
-      <p>Welcome to your new realtime app on Lophilo!</p>
-      <p>This is a client/server/hardware example built on top of the included frameworks: Knockout.JS (data binding), Bootstrap (UI), SocketStream (RPC)</p>
+      <p>Welcome to your new realtime app on the Lophilo platform!</p>
+      <p>This is a client/server/hardware example built on top of the included frameworks: 
+      <ul>
+          <li>Knockout.JS (data binding)
+          <li>Bootstrap (UI)
+          <li>SocketStream (RPC)
+      </ul>
+      </p>
     </div>
     <div class="btn-group" data-bind="foreach: pins">
       <button type="button" class="btn" data-bind="click: require('/app.js').toggle"><b data-bind="text: name"></b>: <span data-bind="text: bit"></span></button>
