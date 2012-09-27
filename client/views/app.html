@@ -7,7 +7,7 @@
   </head>
   <body>
     <div class="well">
-      <p>Welcome to your new realtime app on the Lophilo platform!</p>
+      <h1>Welcome to your new realtime app on the Lophilo platform!</h1>
       <p>This is a client/server/hardware example built on top of the included frameworks: 
       <ul>
           <li>Knockout.JS (data binding)
@@ -17,7 +17,9 @@
       </p>
     </div>
     <div class="btn-group" data-bind="foreach: pins">
-      <button type="button" class="btn" data-bind="click: require('/app.js').toggle"><b data-bind="text: name"></b>: <span data-bind="text: bit"></span></button>
+      <button type="button" class="btn" data-bind="click: require('/app.js').toggle">
+        <b data-bind="text: name"></b>: <span data-bind="text: bit"></span>
+      </button>
     </div>  
   </body>
 </html>

@@ -22,4 +22,4 @@ exports.toggle = function(pin) {
 
 ko.applyBindings(model);   
 
-setInterval(refreshInputOutput, 1000);;
+setInterval(refreshInputOutput, 1000);
