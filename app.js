@@ -7,7 +7,7 @@ var http = require('http'),
 ss.client.define('main', {
   view: 'app.html',
   css:  ['app.styl'],
-  code: ['libs/jquery.min.js', 'app'],
+  code: ['libs/jquery.min.js', 'libs/knockout-2.1.0.js', 'libs/bootstrap.js', 'app'],
   tmpl: '*'
 });
 

@@ -12,6 +12,14 @@ var model = new InputOutputModel();
 
 function refreshInputOutput() {
     ss.rpc('lophilo.readShieldA', function(values) {
-        model.apps.pins(values);
+        model.pins(values);
     });    
 }
+
+exports.toggle = function(pin) {
+	ss.rpc('lophilo.write', pin.name, pin.bit==1?0:1);
+}
+
+ko.applyBindings(model);   
+
+setInterval(refreshInputOutput, 1000);;
