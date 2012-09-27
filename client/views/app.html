@@ -7,5 +7,9 @@
   </head>
   <body>
     <p>Welcome to your new realtime app on Lophilo!</p>
+    <p>This is a client/server/hardware example built on top of the included frameworks</p>
+    <ul data-bind="foreach: pins">
+        <li><b data-bind="text: pins.name"/><span data-bind="text: pins.value"/></li>
+    </ul>
   </body>
 </html>

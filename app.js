@@ -27,7 +27,8 @@ if (ss.env === 'production') ss.client.packAssets();
 
 // Start web server
 var server = http.Server(ss.http.middleware);
-server.listen(8888);
-
+var port = process.env.PORT || 8888;
+server.listen(port);
+console.log('Listening on port ' + port);
 // Start SocketStream
 ss.start(server);
