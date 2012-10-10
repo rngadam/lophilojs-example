@@ -1,1 +1,1 @@
-/home/rngadam/lophilo/lmc/client/code/libs/knockout.mapping-latest.js
+../../../../../../client/code/libs/knockout.mapping-latest.js

@@ -1,1 +1,1 @@
-/home/rngadam/lophilo/lmc/client/code/libs/bootstrap.js
+../../../../../../client/code/libs/bootstrap.js

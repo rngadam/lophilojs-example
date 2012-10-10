@@ -1,1 +1,1 @@
-/home/rngadam/lophilo/lmc/client/code/libs/jgauge-0.3.0.a3.js
+../../../../../../client/code/libs/jgauge-0.3.0.a3.js
