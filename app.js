@@ -3,32 +3,45 @@
 var http = require('http'),
     ss = require('socketstream');
 
-// Define a single-page client called 'main'
-ss.client.define('main', {
-  view: 'app.html',
-  css:  ['app.styl'],
-  code: ['libs/jquery.min.js', 'libs/knockout-2.1.0.js', 'libs/bootstrap.js', 'app'],
-  tmpl: '*'
-});
+function defaultHandler(err, port) {
+	console.log('Listening on port ' + port);
+}
 
-// Serve this client on the root URL
-ss.http.route('/', function(req, res){
-  res.serveClient('main');
-});
+function main(cb) {
+	if(!cb)
+		cb = defaultHandler;
 
-// Code Formatters
-ss.client.formatters.add(require('ss-stylus'));
+	// Define a single-page client called 'main'
+	ss.client.define('main', {
+	  view: 'app.html',
+	  css:  ['app.styl'],
+	  code: ['libs/jquery.min.js', 'libs/knockout-2.1.0.js', 'libs/bootstrap.js', 'app'],
+	  tmpl: '*'
+	});
 
-// Use server-side compiled Hogan (Mustache) templates. Others engines available
-ss.client.templateEngine.use(require('ss-hogan'));
+	// Serve this client on the root URL
+	ss.http.route('/', function(req, res){
+	  res.serveClient('main');
+	});
 
-// Minimize and pack assets if you type: SS_ENV=production node app.js
-if (ss.env === 'production') ss.client.packAssets();
+	// Code Formatters
+	ss.client.formatters.add(require('ss-stylus'));
 
-// Start web server
-var server = http.Server(ss.http.middleware);
-var port = process.env.PORT || 8888;
-server.listen(port);
-console.log('Listening on port ' + port);
-// Start SocketStream
-ss.start(server);
+	// Use server-side compiled Hogan (Mustache) templates. Others engines available
+	ss.client.templateEngine.use(require('ss-hogan'));
+
+	// Minimize and pack assets if you type: SS_ENV=production node app.js
+	if (ss.env === 'production') ss.client.packAssets();
+
+	// Start web server
+	var server = http.Server(ss.http.middleware);
+	server.listen(0);
+
+	// Start SocketStream
+	ss.start(server);
+	cb(null, server.address().port);
+}
+
+if (require.main === module) {
+	main();
+}
