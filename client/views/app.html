@@ -16,9 +16,12 @@
       </ul>
       </p>
     </div>
+    <button type="button" class="btn">
+      <b>io0</b>: <span data-bind="text: io0"></span>
+    </button>    
     <div class="btn-group" data-bind="foreach: pins">
       <button type="button" class="btn" data-bind="click: require('/app.js').toggle">
-        <b data-bind="text: name"></b>: <span data-bind="text: bit"></span>
+        <b data-bind="text: port"></b>: <span data-bind="text: value"></span>
       </button>
     </div>  
   </body>
