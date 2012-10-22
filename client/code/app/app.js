@@ -1,4 +1,5 @@
-"use strict";
+'use strict';
+/*global ko:true, ss:true */
 
 // Client Code
 
@@ -10,16 +11,16 @@ var InputOutputModel = function() {
 
 var model = new InputOutputModel();
 
-function refreshInputOutput() {
+function refreshInputOutput() { 
     ss.rpc('lophilo.readShieldA', function(values) {
         model.pins(values);
-    });    
+    });
 }
 
 exports.toggle = function(pin) {
-	ss.rpc('lophilo.write', pin.name, pin.bit==1?0:1);
-}
+    ss.rpc('lophilo.write', pin.name, pin.bit == 1 ? 0 : 1);
+};
 
-ko.applyBindings(model);   
+ko.applyBindings(model);
 
 setInterval(refreshInputOutput, 1000);

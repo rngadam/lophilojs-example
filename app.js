@@ -7,20 +7,20 @@ function defaultHandler(err, port) {
 	console.log('Listening on port ' + port);
 }
 
-function main(cb) {
-	if(!cb)
+exports.main = function(cb) {
+	if (!cb)
 		cb = defaultHandler;
 
 	// Define a single-page client called 'main'
 	ss.client.define('main', {
 	  view: 'app.html',
-	  css:  ['app.styl'],
+	  css: ['app.styl'],
 	  code: ['libs/jquery.min.js', 'libs/knockout-2.1.0.js', 'libs/bootstrap.js', 'app'],
 	  tmpl: '*'
 	});
 
 	// Serve this client on the root URL
-	ss.http.route('/', function(req, res){
+	ss.http.route('/', function(req, res) {
 	  res.serveClient('main');
 	});
 
@@ -35,13 +35,13 @@ function main(cb) {
 
 	// Start web server
 	var server = http.Server(ss.http.middleware);
-	server.listen(0);
+	server.listen(0); // let the OS select the port
 
 	// Start SocketStream
 	ss.start(server);
 	cb(null, server.address().port);
-}
+};
 
 if (require.main === module) {
-	main();
+	exports.main();
 }
