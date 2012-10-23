@@ -7,10 +7,6 @@ console.log('App Loading');
 
 var model;
 
-function refreshInputOutput() {
-  ss.rpc('lophilo.update', defaultCallback);
-}
-
 function defaultCallback(err, data) {
     if(err) console.log('ERROR: ' + err);
     else if(data) console.log(data);
@@ -43,15 +39,14 @@ ss.rpc('lophilo.load', function(err, data) {
       value: makeComputed(port)
     });
   }
+  model.toggle = function(pin) {
+    var targetValue = pin.value() == 1 ? 0 : 1;
+    console.log('client writing %s from value %s to %d', pin.port, pin.value(), targetValue);
+    ss.rpc('lophilo.write', pin.port, targetValue, defaultCallback);
+  };
 
   ko.applyBindings(model);
-  setInterval(refreshInputOutput, 1000);
-});
 
-exports.toggle = function(pin) {
-  var targetValue = pin.value() == 1 ? 0 : 1;
-  console.log('client writing %s from value %s to %d', pin.port, pin.value(), targetValue);
-  ss.rpc('lophilo.write', pin.port, targetValue, defaultCallback);
-};
+});
 
 console.log('App Loaded');

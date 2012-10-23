@@ -15,12 +15,9 @@
           <li>SocketStream (RPC)
       </ul>
       </p>
-    </div>
-    <button type="button" class="btn">
-      <b>io0</b>: <span data-bind="text: io0"></span>
-    </button>    
+    </div> 
     <div class="btn-group" data-bind="foreach: pins">
-      <button type="button" class="btn" data-bind="click: require('/app.js').toggle">
+      <button type="button" class="btn" data-bind="click: $parent.toggle">
         <b data-bind="text: port"></b>: <span data-bind="text: value"></span>
       </button>
     </div>  
