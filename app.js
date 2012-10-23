@@ -4,7 +4,7 @@ var http = require('http'),
   ss = require('socketstream');
 
 function defaultHandler(err, port) {
-  console.log('Listening on port ' + port);
+  console.log('http://localhost:' + port);
 }
 
 exports.main = function(cb) {
@@ -39,7 +39,9 @@ exports.main = function(cb) {
 
   // Start web server
   var server = http.Server(ss.http.middleware);
-  server.listen(0); // let the OS select the port
+  // process.env.PORT: selected by cloud9
+  // 0: let the operating system select the value
+  server.listen(process.env.PORT || 0); 
 
   // Start SocketStream
   ss.start(server);

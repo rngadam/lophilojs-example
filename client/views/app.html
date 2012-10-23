@@ -13,8 +13,8 @@
         <ul class="nav nav-tabs">
           <a class="brand" href="http://lophilo.com" target="new">Lophilo</a>
           <li>
-            <a href="#intro" data-placement="bottom" data-toggle="tab" rel="tooltip"
-            title="Some introductory text">Information</a>
+            <a href="#about" data-placement="bottom" data-toggle="tab" rel="tooltip"
+            title="Some introductory text">About</a>
           </li>
           <li class="active">
             <a href="#io" data-placement="bottom" data-toggle="tab" rel="tooltip"
@@ -26,7 +26,7 @@
       <!-- class="navbar-inner" -->
       
       <div id="appTabContent" class="tab-content">
-        <div class="tab-pane fade in" id="intro">
+        <div class="tab-pane fade in" id="about">
           <div class="well">
             <p>Your new realtime, hardware-control app on the Lophilo platform!</p>
             <p>This is a client/server/hardware example built on top of the included
@@ -41,13 +41,20 @@
           </div>
         </div>
         <!-- class="tab-pane" -->
-        <div class="tab-pane fade in active" id="io" data-bind="foreach: pins">
-
-          <button type="button" class="btn" data-bind="click: $parent.toggle">
-            <b data-bind="text: port"></b>:
-            <span data-bind="text: value"></span>
-          </button>
-
+        <div class="tab-pane fade in active" id="io">
+          <h4>Shield A</h4>
+          <h5>Lower (VAL)</h5>
+          <div class="btn-group" data-bind="foreach: al">
+            <button type="button" class="btn" data-bind="click: $parent.toggle">              
+              <b data-bind="text: label()"></b>:<span data-bind="text: value()"></span>
+            </button>
+          </div>
+          <h5>Upper (VAH)</h5>
+          <div class="btn-group" data-bind="foreach: ah">
+            <button type="button" class="btn" data-bind="click: $parent.toggle">
+              <b data-bind="text: label()"></b>:<span data-bind="text: value()"></span>
+            </button>
+          </div>
         </div>
         <!-- class="tab-pane" -->
       </div>

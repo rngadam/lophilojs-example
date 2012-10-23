@@ -9,13 +9,15 @@ function updater(ss, res) {
     var update = {};
     for (var port in lophilo.gpio0) {
       var currentValue = lophilo.gpio0[port].read();
-      if (local.gpio0[port] != currentValue) {
-        local.gpio0[port] = currentValue;
+      if(!local.gpio0[port]) {
+        continue; // wait for load to create ports...
+      }
+      if (local.gpio0[port].value != currentValue) {
+        local.gpio0[port].value = currentValue;
         update[port] = currentValue;
       }
     }
     if(Object.keys(update).length) {     
-      console.log('publishing update!');
       ss.publish.all('update', update);
       if(res)
         res(null, "Server sent events for update");
@@ -25,6 +27,24 @@ function updater(ss, res) {
     }
 }
 
+function createPortObject(shield, port, value) {
+  var data = {};
+  data.name = port;
+  data.value = value;
+  data.shield = shield;
+  if(port.indexOf('io') === 0) {
+    data.type = 'IO';
+    data.id = parseInt(port.slice(2), 10);
+    if(data.id <= 13) {
+      data.side = 'L';
+    } else {
+      data.side = 'H';
+    }
+  } else {
+    data.type = 'unknown';
+  }
+  return data;
+}
 
 exports.actions = function(req, res, ss) {
   //req.use('debug');
@@ -36,7 +56,11 @@ exports.actions = function(req, res, ss) {
     load: function() {
       if(!Object.keys(local.gpio0).length) {
         for (var port in lophilo.gpio0) {
-          local.gpio0[port] = lophilo.gpio0[port].read();
+          if(!local.gpio0[port]) {
+            local.gpio0[port] = createPortObject('A', port, lophilo.gpio0[port].read());
+          } else {
+            local.gpio0[port].value = lophilo.gpio0[port].read();
+          }
         }
       }
       res(null, local.gpio0);
