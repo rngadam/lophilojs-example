@@ -1,4 +1,4 @@
-// My SocketStream 0.3 app
+'use strict';
 
 var http = require('http'),
   ss = require('socketstream');
@@ -13,8 +13,13 @@ exports.main = function(cb) {
   // Define a single-page client called 'main'
   ss.client.define('main', {
     view: 'app.html',
-    css: ['app.styl'],
-    code: ['libs/jquery.min.js', 'libs/knockout-2.1.0.js', 'libs/knockout.mapping-latest.js', 'libs/bootstrap.js', 'app'],
+    css: ['app.styl', 'bootstrap'],
+    code: [
+      'libs/jquery.min.js', 
+      'libs/knockout-2.1.0.js', 
+      'libs/bootstrap.js', 
+      'libs/knockout.mapping-latest.js', 
+      'app'],
     tmpl: '*'
   });
 

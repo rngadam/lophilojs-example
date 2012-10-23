@@ -1,25 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
+  
   <head>
     <SocketStream/>
-    <meta charset="utf-8"/>
+    <meta charset="utf-8" />
     <title>Welcome to Lophilo</title>
   </head>
+  
   <body>
-    <div class="well">
-      <p>Your best new realtime app on the Lophilo platform!</p>
-      <p>This is a client/server/hardware example built on top of the included frameworks: 
-      <ul>
-          <li>Knockout.JS (data binding)
-          <li>Bootstrap (UI)
-          <li>SocketStream (RPC)
-      </ul>
-      </p>
-    </div> 
-    <div class="btn-group" data-bind="foreach: pins">
-      <button type="button" class="btn" data-bind="click: $parent.toggle">
-        <b data-bind="text: port"></b>: <span data-bind="text: value"></span>
-      </button>
-    </div>  
+    <div class="navbar">
+      <div class="navbar-inner">
+        <ul class="nav nav-tabs">
+          <a class="brand" href="http://lophilo.com" target="new">Lophilo</a>
+          <li>
+            <a href="#intro" data-placement="bottom" data-toggle="tab" rel="tooltip"
+            title="Some introductory text">Information</a>
+          </li>
+          <li class="active">
+            <a href="#io" data-placement="bottom" data-toggle="tab" rel="tooltip"
+            title="Lophilo Inputs/Outputs">Inputs/Outputs</a>
+          </li>
+        </ul>
+        <!-- class="nav nav-tabs" -->
+      </div>
+      <!-- class="navbar-inner" -->
+      
+      <div id="appTabContent" class="tab-content">
+        <div class="tab-pane fade in" id="intro">
+          <div class="well">
+            <p>Your new realtime, hardware-control app on the Lophilo platform!</p>
+            <p>This is a client/server/hardware example built on top of the included
+              frameworks and libraries:
+              <ul>
+                <li>Knockout.JS (data binding)</li>
+                <li>Bootstrap (UI - User Interface)</li>
+                <li>SocketStream (RPC - Remote Procedure Call)</li>
+                <li>Redis (data storage)</li>                
+              </ul>
+            </p>
+          </div>
+        </div>
+        <!-- class="tab-pane" -->
+        <div class="tab-pane fade in active" id="io" data-bind="foreach: pins">
+
+          <button type="button" class="btn" data-bind="click: $parent.toggle">
+            <b data-bind="text: port"></b>:
+            <span data-bind="text: value"></span>
+          </button>
+
+        </div>
+        <!-- class="tab-pane" -->
+      </div>
+      <!-- class="tab-content" -->
+    </div>
+    <!-- class="navbar" -->
   </body>
 </html>
