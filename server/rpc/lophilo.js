@@ -36,6 +36,11 @@ exports.actions = function(req, res, ss) {
         lophilo.powerOffShields();
         res(null, 'Powered off');
       }
-    }    
+    },
+    multiwrite: function(updates) {
+      if(!updates) res('array parameter required');
+      if(!updates instanceof Array) res('must be an array, got: ' + updates);
+      lophilo.multiWrite(updates, res);
+    }
   };
 };

@@ -88,13 +88,17 @@ function iterateObject(object, fnc) {
 	}
 }
 
-function multiset(value, context) {
+function multiwrite(value, context) {
+  var updates = [];
   iterateObject(context, function(register) {
     if(!register.path) return;
     if(register.last() === value) return;
     console.log('client writing %s value %s', register.path, value);    
-    ss.rpc('lophilo.write', register.path, value, defaultCallback);
+    updates.push({path: register.path, value: value});
   });
+  if(updates.length) {
+    ss.rpc('lophilo.multiwrite', updates, defaultCallback);
+  }
 }
 
 ss.rpc('lophilo.load', function(err, data) {
@@ -159,8 +163,8 @@ ss.rpc('lophilo.load', function(err, data) {
     });
   };
   
-  model.allones = multiset.bind(null, 1);
-  model.allzeros = multiset.bind(null, 0);
+  model.allones = multiwrite.bind(null, 1);
+  model.allzeros = multiwrite.bind(null, 0);
   ko.applyBindings(model);
 
 });
