@@ -44,6 +44,9 @@
         </div>
         <!-- class="tab-pane" -->
         <div class="tab-pane fade in active" id="io">
+          <button type="button" class="btn" data-bind="click: power">
+          POWER <span data-bind="text: powerstatus"></span>
+          </button>        
           <h4>Shield A</h4>
           <!--
           <div data-bind="with: aregs">
@@ -53,22 +56,30 @@
           <table class="table" data-bind="foreach: aregs">
             <tr>
             <td>
-            <span data-bind="text: label"></span>
+            <span data-bind="text: name"></span>
             </td>
             <td>
-            <input data-bind="value: value"/>  
+            <input data-bind="value: last"/>  
             </td>
           </table>
           <h5>Lower (VAL)</h5>
+          <div data-bind="with: al">
+            <button type="button" class="btn" data-bind="click: $parent.allones">              
+              All Ones
+            </button>          
+            <button type="button" class="btn" data-bind="click: $parent.allzeros">              
+              All Zeros
+            </button>                
+          </div>
           <div class="btn-group" data-bind="foreach: al">
             <button type="button" class="btn" data-bind="click: $parent.toggle">              
-              <b data-bind="text: label()"></b>:<span data-bind="text: value()"></span>
+              <b data-bind="text: label"></b>:<span data-bind="text: last"></span>
             </button>
           </div>
           <h5>Upper (VAH)</h5>
           <div class="btn-group" data-bind="foreach: ah">
             <button type="button" class="btn" data-bind="click: $parent.toggle">
-              <b data-bind="text: label()"></b>:<span data-bind="text: value()"></span>
+              <b data-bind="text: label"></b>:<span data-bind="text: last"></span>
             </button>
           </div>
         </div>
