@@ -1,10 +1,11 @@
 'use strict';
 
 var http = require('http'),
-  ss = require('socketstream');
+  ss = require('socketstream'),
+  os = require('os');
 
 function defaultHandler(err, port) {
-  console.log('http://localhost:' + port);
+  console.log('Listening on http://'+ os.hostname() + '.local:' + port);
 }
 
 exports.main = function(cb) {

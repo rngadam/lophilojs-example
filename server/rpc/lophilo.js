@@ -41,7 +41,8 @@ function createPortObject(shield, port, value) {
       data.side = 'H';
     }
   } else {
-    data.type = 'unknown';
+    data.type = 'REGISTER';
+    data.id = port;
   }
   return data;
 }
@@ -72,6 +73,26 @@ exports.actions = function(req, res, ss) {
       lophilo.gpio0[name].write(value);  
       setTimeout(updater.bind(null, ss), 0);
       res(null, "Server wrote the value");
+    },
+    power: function(status) {
+      if(status) {
+        lophilo.power.write(lophilo.SHIELDS_POWER_ON);
+        res(null, 'Powered on');
+      } else {
+        lophilo.power.write(lophilo.SHIELDS_POWER_OFF);
+        res(null, 'Powered off');
+      }
+    },
+    doe: function() {
+      lophilo.gpio0.doe.write(lophilo.GPIO_ALL_ON);
+      res(null, 'Operation completed');      
+    },
+    ledwrite: function(id, value) {
+      lophilo['led' + id].srgb.write(value);
+    },
+    ledread: function(id, value) {
+      res(null, lophilo['led' + id].srgb.read());
     }
+    
   };
 };

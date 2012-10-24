@@ -23,7 +23,7 @@ ss.event.on('update', function(update) {
 // we want to preserve the value of port at creation, so 
 // we need to create the function inside another function with the 
 // proper port as parameter
-function makeComputedValue  (portname) {
+function makeComputedValue(portname) {
   return ko.computed(
     function() { 
       return this[portname].value(); 
@@ -40,6 +40,13 @@ function makeComputedLabel(portname) {
       model);  
 }
 
+function makeSimpleLabel(regname) {
+  return ko.computed(
+    function() { 
+      return regname; 
+    }, model);
+}
+
 function dependentPort(portname, port) {
   // shallow copy
   port = jQuery.extend({}, port); 
@@ -48,14 +55,24 @@ function dependentPort(portname, port) {
   return port;
 }
 
+function dependentRegister(regname, reg) {
+  // shallow copy
+  reg = jQuery.extend({}, reg); 
+  reg.value = makeComputedValue(regname);
+  reg.label = makeSimpleLabel(regname);
+  return reg;
+}
+
+
 ss.rpc('lophilo.load', function(err, data) {
   console.log('loading data');
-  //console.dir(data);
+  console.dir(data);
   model = ko.mapping.fromJS(data);
-  //console.dir(model);
+  console.dir(model);
   model.pins = ko.observableArray();
   model.al = ko.observableArray();
   model.ah = ko.observableArray();
+  model.aregs = ko.observableArray();
   
   for(var portname in data) {
     var port = data[portname];
@@ -66,6 +83,9 @@ ss.rpc('lophilo.load', function(err, data) {
       } else {
         model.ah.push(dependentPort(portname, port));
       }
+    } else {
+      console.log('register: ' + portname);
+      model.aregs.push(dependentRegister(portname, port));
     }
   }
   model.toggle = function(port) {
