@@ -18,9 +18,17 @@
             title="Some introductory text">About</a>
           </li>
           <li class="active">
-            <a href="#io" data-placement="bottom" data-toggle="tab" rel="tooltip"
-            title="Lophilo Inputs/Outputs">Inputs/Outputs</a>
+            <a href="#shielda" data-placement="bottom" data-toggle="tab" rel="tooltip"
+            title="Lophilo Inputs/Outputs">Shield A</a>
           </li>
+          <li>
+            <a href="#shieldb" data-placement="bottom" data-toggle="tab" rel="tooltip"
+            title="Lophilo Inputs/Outputs">Shield B</a>
+          </li>        
+          <li>
+            <a href="#onboardleds" data-placement="bottom" data-toggle="tab" rel="tooltip"
+            title="">On-board RGB LEDS</a>
+          </li>            
         </ul>
         <!-- class="nav nav-tabs" -->
       </div>
@@ -42,46 +50,61 @@
             <p>See README.md for more information</p>
           </div>
         </div>
-        <!-- class="tab-pane" -->
-        <div class="tab-pane fade in active" id="io">
+   <!-- class="tab-pane" -->
+        <div class="tab-pane fade in active" id="shielda">
           <button type="button" 
-            data-bind="css: {'btn-success': powerstatus, 'btn-inverse': !powerstatus()}, click: powerstatus" 
+            data-bind="css: {'btn-success': powerstatus, 'btn-inverse': !powerstatus()}, click: togglepower" 
             class="btn">
-            <span data-bind="text: powerstatus() ? 'SHIELDS ON': 'SHIELDS OFF'">
+            <span data-bind="text: powerstatus() ? 'SHIELDS ON!': 'SHIELDS OFF'">
             </span>
-          </button>        
+          </button>    
+          <button type="button" 
+            data-bind="click: reload" 
+            class="btn">
+            <span>
+              Reload
+            </span>
+          </button>            
           <h4>Shield A</h4>
-          <!--
-          <div data-bind="with: aregs">
-            <span data-bind="text: ko.toJSON($data)"></span>
-          </div>
-
-          <table class="table" data-bind="foreach: aregs">
-            <tr>
-            <td>
-            <span data-bind="text: name"></span>
-            </td>
-            <td>
-            <input data-bind="value: last"/>  
-            </td>
-          </table>
-          -->          
+          <button type="button" 
+            data-bind="css: {'btn-success': shields.outputEnable(), 'btn-inverse': !shields.outputEnable()}, click: shields.toggleOutputEnable" 
+            class="btn">
+            <span data-bind="text: shields.outputEnable() ? 'OUTPUT ON!': 'OUTPUT OFF'">
+            </span>
+          </button>             
           <h5>Lower (VAL)</h5>
-          <div data-bind="with: al">
-            <button type="button" class="btn" data-bind="click: $parent.allones">              
+          <!--- DEBUG
+          <div data-bind="with: shields.al">
+            <span data-bind="text: ko.toJSON($data)"></span>
+          </div>     
+          -->
+          <div data-bind="with: shields.al">
+            <button type="button" class="btn" data-bind="click: $root.allones">              
               All Ones
             </button>          
-            <button type="button" class="btn" data-bind="click: $parent.allzeros">              
+            <button type="button" class="btn" data-bind="click: $root.allzeros">              
               All Zeros
             </button>                
           </div>
-          <div class="btn-group" data-bind="foreach: al">
+          
+          <table class="table">
+            <tr data-bind="foreach: shields.al">
+            <td>
+              <b data-bind="text: label"></b>
+            <tr data-bind="foreach: shields.al">
+            <td>
             <button type="button" class="btn" data-bind="click: $parent.toggle">              
-              <b data-bind="text: label"></b>:<span data-bind="text: last"></span>
+              <span data-bind="text: last"></span>
             </button>
-          </div>
-          <h5>Upper (VAH)</h5>
-          <div data-bind="with: ah">
+            <tr data-bind="foreach: shields.al">
+            <td>
+            <button type="button" class="btn" data-bind="click: toggleinout">              
+              <span data-bind="text: inout() ? 'OUT' : 'INP'"></span>
+            </button>
+          </table>
+          
+          <h5>Upper (AH)</h5>
+          <div data-bind="with: shields.ah">
             <button type="button" class="btn" data-bind="click: $parent.allones">              
               All Ones
             </button>          
@@ -89,13 +112,57 @@
               All Zeros
             </button>                
           </div>          
-          <div class="btn-group" data-bind="foreach: ah">
+          <table class="table">
+            <tr data-bind="foreach: shields.ah">
+            <td>
+              <b data-bind="text: label"></b>
+            <tr data-bind="foreach: shields.ah">
+            <td>
+            <button type="button" class="btn" data-bind="click: $parent.toggle">              
+              <span data-bind="text: last"></span>
+            </button>
+            <tr data-bind="foreach: shields.ah">
+            <td>
+            <button type="button" class="btn" data-bind="click: toggleinout">              
+              <span data-bind="text: inout() ? 'OUT' : 'INP'"></span>
+            </button>
+          </table>
+        </div>
+        <!-- class="tab-pane" -->
+        <div class="tab-pane fade in" id="shieldb">
+          <button type="button" 
+            data-bind="css: {'btn-success': powerstatus, 'btn-inverse': !powerstatus()}, click: powerstatus" 
+            class="btn">
+            <span data-bind="text: powerstatus() ? 'SHIELDS ON': 'SHIELDS OFF'">
+            </span>
+          </button>        
+          <h4>Shield B</h4>
+          <h5>Lower (BL)</h5>
+          <div data-bind="with: shields.bl">              
+          </div>
+          <div class="btn-group" data-bind="foreach: shields.bl">
+            <button type="button" class="btn">              
+              <b data-bind="text: label"></b>:<span data-bind="text: fmen.last"></span>
+            </button>
+          </div>
+          <h5>Upper (BH)</h5>
+          <div data-bind="with: shields.bh">             
+          </div>          
+          <div class="btn-group" data-bind="foreach: shields.bh">
             <button type="button" class="btn" data-bind="click: $parent.toggle">
+              <b data-bind="text: label"></b>:<span data-bind="text: fmen.last"></span>
+            </button>
+          </div>
+        </div>
+        <!-- class="tab-pane" -->     
+        <div class="tab-pane fade in active" id="onboardleds">
+          <div class="btn-group" data-bind="foreach: leds">
+            <button type="button" class="btn">              
               <b data-bind="text: label"></b>:<span data-bind="text: last"></span>
             </button>
           </div>
         </div>
-        <!-- class="tab-pane" -->
+        <!-- class="tab-pane" -->            
       </div>
       <!-- class="tab-content" -->
     </div>

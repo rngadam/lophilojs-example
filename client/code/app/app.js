@@ -5,13 +5,16 @@
 
 console.log('App Loading');
 
+function debug(obj) {
+  console.log(JSON.stringify(obj));
+}
 function LophiloModel(data) {
   var self = this;
   
   // we want to preserve the value of port at creation, so 
   // we need to create the function inside another function with the 
   // proper port as parameter
-  function makeComputedValue(objPath) {
+  function makeComputedLastValue(objPath) {
     return ko.computed(
       function() { 
         var obj = findObj(self, objPath);
@@ -20,73 +23,113 @@ function LophiloModel(data) {
       self);
   }
   
-  function dependentRegister(objPath, reg) {
-    // shallow copy
-    reg = jQuery.extend({}, reg); 
-    reg.last = makeComputedValue(objPath);
-    return reg;
+  function makeComputedInOutValue(objPath) {
+      return ko.computed({
+        'read': function() {
+          var register = findObj(self, objPath);
+          return (1 << register.id() & self.gpio0.doe.last()) !== 0;
+        },
+        'write': function(value) {
+          var register = findObj(self, objPath);
+          var newValue;
+          if(value) {
+            newValue = (1 << register.id()) | self.gpio0.doe.last();
+          } else {
+            newValue = (~(1 << register.id())) & self.gpio0.doe.last();
+          }
+          ss.rpc('lophilo.write', 'gpio0.doe', newValue, defaultCallback);
+          if(!value) {
+            newValue = (1 << register.id()) | self.gpio0.din.last();
+          } else {
+            newValue = (~(1 << register.id())) & self.gpio0.din.last();
+          }          
+          ss.rpc('lophilo.write', 'gpio0.din', newValue, defaultCallback);
+        }
+      }, self);    
+  }
+  
+  function makeToggle(objPath) {
+    return function() {
+      var obj = findObj(self, objPath);
+      obj.inout(!obj.inout());
+    };
+  }
+  
+  function swapArrayMembersDependent(array) {
+    for(var i in array()) {
+      var path = array()[i];
+      //console.log(path);  
+      var reg = findObj(self, path);
+      reg.inout = makeComputedInOutValue(path);
+      reg.toggleinout = makeToggle(path);
+      var copy = jQuery.extend({}, reg); 
+      
+      // http://stackoverflow.com/questions/6425409/how-to-replace-a-given-index-element-in-knockoutjs
+      array.replace(array()[i], copy); 
+    }
   }
   
   console.log('loading data');
   console.dir(data);
   ko.mapping.fromJS(data, {}, self);
   console.dir(self);
-  self.pins = ko.observableArray();
-  self.al = ko.observableArray();
-  self.ah = ko.observableArray();
-  self.aregs = ko.observableArray();
-  
-  self.pwms = ko.observableArray();
-  self.bl = ko.observableArray();
-  self.bh = ko.observableArray(); 
-  
-  recurseObject(data, function(register) {
-    
-    if(!register.id) {
-      return;
-    }
-    if(register.rtype == 'IO') {
-      var dpa = dependentRegister(register.path, register);
-      self.pins.push(dpa);
-      if(register.side == 'L') {
-        self.al.push(dpa);
-      } else {
-        self.ah.push(dpa);
-      }
-    } else if(register.rtype == 'REGISTER') {
-      if(register.shield == 'A') {
-        console.log('register: ' + register.path);
-        self.aregs.push(dependentRegister(register.path, register));  
-      } else {
-        var dpb = dependentRegister(register.path, register);
-        self.pwms.push(dpb); 
-        if(register.side == 'L') {
-          self.bl.push(dpb);
-        } else {
-          self.bh.push(dpb);
-        }        
-      }
-    }
-  });
-  
-  self.al.sort(comparator);
-  self.ah.sort(comparator);
-  self.bl.sort(comparator);
-  self.bh.sort(comparator);
 
+  swapArrayMembersDependent(self.shields.al);
+  swapArrayMembersDependent(self.shields.ah);
+  swapArrayMembersDependent(self.shields.bl);
+  swapArrayMembersDependent(self.shields.bh);
+
+  //ko.mapping.defaultOptions().ignore = ["shields"];
+
+  self.reload = function() {
+    ss.rpc('lophilo.load', function(err, data) {
+      console.dir(data);      
+      ko.mapping.fromJS(data, self);   
+      console.dir(self);      
+    });    
+  };
+  
+
+  
+  /* on/off toggling */
   self.toggle = function(register) {
     var targetValue = register.last() === 0 ? 1 : 0;
-    console.log('client writing %s from value %s to %d', register.path, register.last(), targetValue);
-    ss.rpc('lophilo.write', register.path, targetValue, defaultCallback);
+    console.log('client writing %s from value %s to %d', register.path(), register.last(), targetValue);
+    ss.rpc('lophilo.write', register.path(), targetValue, defaultCallback);
+  };
+  
+  /** POWER TOGGLER **/
+  self.togglepower = function() {
+    self.powerstatus(self.powerstatus() ? false : true);
   };
   self.powerstatus = ko.computed({
     read: function() {
-      return self.power.last() === self.SHIELDS_POWER_ON();
+      return self.sys.power.last() === self.SHIELDS_POWER_ON();
     },
     write: function(value) {
-      ss.rpc('lophilo.power', !self.power.last(), defaultCallback);
+      ss.rpc(
+        'lophilo.power', 
+        value ?  self.SHIELDS_POWER_ON() : self.SHIELDS_POWER_OFF(), 
+        defaultCallback);
     }
-  }, self);  
+  }, self);   
+  
+  /** OUTPUT ENABLE TOGGLER **/  
+  self.shields.toggleOutputEnable = function() {
+    self.shields.outputEnable(self.shields.outputEnable() ? false : true);
+  };  
+  self.shields.outputEnable = ko.computed({
+    'read': function() {
+      // 0x0 is all off, any other value is from 1 to max leds on!
+      return self.gpio0.doe.last() !== self.GPIO_ALL_OFF();
+    },
+    'write': function(value) {
+      console.log(value);
+      ss.rpc('lophilo.write', 'gpio0.doe', 
+        value ? self.GPIO_ALL_ON() : self.GPIO_ALL_OFF(), defaultCallback);  
+    }
+  }, self);
+ 
   self.allones = multiwrite.bind(null, 1);
   self.allzeros = multiwrite.bind(null, 0);
 }
@@ -104,13 +147,13 @@ function defaultCallback(err, data) {
 }
   
 ss.event.on('update', function(updates) {
-  console.log('client received update ' + JSON.stringify(updates));
+  //console.log('client received update ' + JSON.stringify(updates));
   if(!model) {
    console.log('event received before model created!');
   }
   for (var i in updates) {
     var update = updates[i];
-    console.log('client updating port ' + update.path + ' to value ' + update.value);
+    //console.log('client updating port ' + update.path + ' to value ' + update.value);
     
     var obj = findObj(model, update.path);
     if(obj) 
@@ -138,7 +181,7 @@ function findObj(obj, objPath) {
 }
 
 function recurseObject(object, objectFunction, path) {
-  var properties = Object.getOwnPropertyNames(object);
+  var properties = Object.keys(object);
 	if(!path) {
 		path = [];
 	}
@@ -159,7 +202,7 @@ function comparator(left, right) {
 }
 
 function iterateObject(object, fnc) {
-  var properties = Object.getOwnPropertyNames(object);
+  var properties = Object.keys(object);
 	for(var i in properties) {
 		var propertyName = properties[i];
 		var obj = object[propertyName];
@@ -167,15 +210,29 @@ function iterateObject(object, fnc) {
 	}
 }
 
-function multiwrite(value, context) {
+function multiwrite(value, target) {
   var updates = [];
-  iterateObject(context, function(register) {
-    if(!register.path) return;
-    if(register.last() === value) return;
-    updates.push({path: register.path, value: value});
+  iterateObject(target, function(register) {
+    if(!register.path) {
+      console.log('no path available ');
+      debug(register);
+      return;
+    } 
+    //debug(register);
+    //console.log('checking ' + register.path());
+       
+    if(register.last() === value)  {
+      //console.log('value already updated for ' + register.name());
+      return;
+    }
+     
+    updates.push({path: register.path(), value: value});
   });
   if(updates.length) {
+    //console.log('client multiwrite ' + JSON.stringify(updates));
     ss.rpc('lophilo.multiwrite', updates, defaultCallback);
+  } else {
+    console.log('no updates');
   }
 }
 

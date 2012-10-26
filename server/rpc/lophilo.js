@@ -3,7 +3,7 @@
 var lophilo = require('lophilo');
 
 exports.actions = function(req, res, ss) {
-  //req.use('debug');  
+  req.use('debug');  
   
   // all updates sent to the UI
   function passThroughUpdateCallback(update) {    
@@ -14,7 +14,7 @@ exports.actions = function(req, res, ss) {
   }
   return {
     load: function() {
-      lophilo.watch(/gpio0.io/);
+      lophilo.watch(/gpio0/);
       lophilo.watch(/power/);       
       lophilo.removeAllListeners('update');      
       lophilo.on('update', passThroughUpdateCallback);
@@ -23,8 +23,10 @@ exports.actions = function(req, res, ss) {
       });
     },
     write: function(path, value) {
+      if(arguments.length !== 2) {
+        res('missing arguments, should be path, value');
+      }
       if(!path) res('no path given for write');
-      if(!value) res('no value given for write');
       lophilo.write(path, value, res); 
     },
     read: function(path) {
@@ -41,6 +43,7 @@ exports.actions = function(req, res, ss) {
       }
     },
     multiwrite: function(updates) {
+      lophilo.on('update', passThroughUpdateCallback);      
       if(!updates) res('array parameter required');
       if(!updates instanceof Array) res('must be an array, got: ' + updates);
       lophilo.multiWrite(updates, res);
