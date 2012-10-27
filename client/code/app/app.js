@@ -105,9 +105,12 @@ function LophiloModel(data) {
   
   swapArrayMembersDependent(self.shields.bl);
   swapArrayMembersDependent(self.shields.bh);
+  
   self.leds.leds = [];
   turnObjectsIntoArray(self.leds, self.leds.leds );
+
   ko.mapping.defaultOptions().ignore = ["shields"];
+  
   self.selectedPWM = ko.observable();
   self.selectPWM = function(pwm) {
     console.log('selecting PWM');
@@ -186,9 +189,38 @@ ss.rpc('lophilo.load', function(err, data) {
   
 });
 
+var MessageThrottler = function() {
+  var self = this;  
+  self.lastMessage;
+  self.lastMessageCount;
+  self.conditionallyOutput = function(message, logger) {
+    if(self.lastMessage !== message) {
+      if(self.lastMessageCount > 1) {
+        logger('last message repeated ' + self.lastMessageCount);
+      }
+      console.log(message);
+      self.lastMessage = message;
+      self.lastMessageCount = 0;        
+    } else {
+      self.lastMessageCount++;
+      if(self.lastMessageCount == 2) {
+        logger('(last message repeating)');
+      }
+    }
+  };
+};
+
+var log = function () { console.log.apply(console, arguments); };
+var logerr = function () { console.log.apply(console, arguments); };
+
+var messages = new MessageThrottler();
 function defaultCallback(err, data) {
-    if(err) console.log('ERROR: ' + err);
-    else if(data) console.log(data);
+    if(err) {    
+      messages.conditionallyOutput(err, log);  
+    }
+    else if(data) {
+      messages.conditionallyOutput(data, logerr);  
+    }
 }
   
 ss.event.on('update', function(updates) {
@@ -209,26 +241,33 @@ ss.event.on('update', function(updates) {
 });
 
 function setupColorPicker(label, path) {
-  console.log('For LED ' + label);
   var colorpicker = $('#' + label);
   colorpicker.colorpicker({
     format: 'hex'
   });
 
   var o = findObj(model, path);
-  console.log('latest value: ' +  o.srgb.last() );
-  colorpicker.colorpicker('setValue', '' + o.srgb.last());
+  colorpicker.colorpicker('setValue', '#' + Number(o.srgb.last()).toString(16));
+  
   colorpicker.colorpicker().on('changeColor', function(ev){
     var values =  ev.color.toRGB();
-    console.log(label + ' changed color ' + JSON.stringify(values));
+    //console.log(label + ' changed color ' + JSON.stringify(values));
     var updates = [];
     updates.push({path: path + '.r', value: values.r});
     updates.push({path: path + '.g', value: values.g});
     updates.push({path: path + '.b', value: values.b});
-    console.log(label + ' updates ' + JSON.stringify(updates));
-
+    //console.log(label + ' updates ' + JSON.stringify(updates));
     ss.rpc('lophilo.multiwrite', updates, defaultCallback);    
+    // TODO figure out a way to update the hex field in realtime
+    colorpicker.val(ev.color.toHex());
   });          
+  
+  o.srgb.last.subscribe(function updateColorPicker(newValue) {
+    colorpicker.colorpicker('setValue', '#' + Number(newValue).toString(16));
+  });  
+  // TODO: find a better way to get the hexa values to update
+  colorpicker.colorpicker('show');
+  colorpicker.colorpicker('hide');
 }
   
 function findObj(obj, objPath) {

@@ -178,9 +178,10 @@
               data-color="rgb(255, 146, 180)" 
               data-color-format="rgb" 
               data-bind="attr: {id: label}">
-              <input type="text" class="span2" value="">
+              <label data-bind="text: label"></label>
+              <input id="hexa" type="text" class="span2" value="" readonly>
               <span class="add-on">
-                  <i style="background-color: rgb(255, 146, 180)" data-bind="text: label"></i>
+                  <i style="background-color: rgb(255, 146, 180)"></i>
                 </span>
             </div>
             -->
@@ -199,11 +200,10 @@
     <div class="modal hide" id="pwm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
-        <h3 id="myModalLabel">PWM (Pulse Width Modulation) settings</h3>
+        <h3 id="myModalLabel"><span data-bind="text: $root.selectedPWM.label"></span> PWM (Pulse Width Modulation) settings</h3>
       </div>
       
       <div class="modal-body" data-bind="with: $root.selectedPWM">
-          <h4><span data-bind="label"></span>  
           <label>DTYC (Duty Cycle)</label>
           <input type="text" data-bind="value: dtyc.last">
       </div> <!-- modal-body -->
