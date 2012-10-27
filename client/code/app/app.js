@@ -9,6 +9,15 @@ function debug(obj) {
   console.log(JSON.stringify(obj));
 }
 
+function turnObjectsIntoArray(src, array) {
+  Object.keys(src).forEach(function(k) {
+    var o = src[k];
+    if(o.type) {      
+      array.push(o);
+    }
+  });
+}
+
 function LophiloModel(data) {
   var self = this;
   
@@ -45,13 +54,6 @@ function LophiloModel(data) {
       }, self);    
   }
   
-//  function makeBitFieldToggle(objPath, targetProperty) {
-//    return function() {
-//      var obj = findObj(self, objPath);
-//      obj[targetProperty](!obj[targetProperty]());
-//    };
-//  }
-  
   function makeBitFieldToggle(inout) {
     return function() {
       inout(!inout());
@@ -60,11 +62,7 @@ function LophiloModel(data) {
   function swapArrayMembersDependent(array) {
     for(var i in array()) {
       var path = array()[i];
-      //console.log(path);  
       var reg = findObj(self, path);
-  
-      //var copy = jQuery.extend({}, reg); 
-      
       // http://stackoverflow.com/questions/6425409/how-to-replace-a-given-index-element-in-knockoutjs
       array.replace(array()[i], reg); 
     }
@@ -77,6 +75,7 @@ function LophiloModel(data) {
         
     array.bitfields = [];
     for(var k in bitfields) {
+      k = 'unused';
       array.bitfields.push([]);
     }
     
@@ -95,18 +94,33 @@ function LophiloModel(data) {
   
   console.log('loading data');
   console.dir(data);
-  ko.mapping.fromJS(data, {}, self);
+  ko.mapping.fromJS(data, {}, self);   
+
   console.dir(self);
 
   swapArrayMembersDependent(self.shields.al);
   createBitfields(self.shields.al);
   swapArrayMembersDependent(self.shields.ah);
   createBitfields(self.shields.ah);  
+  
   swapArrayMembersDependent(self.shields.bl);
   swapArrayMembersDependent(self.shields.bh);
-
+  self.leds.leds = [];
+  turnObjectsIntoArray(self.leds, self.leds.leds );
   ko.mapping.defaultOptions().ignore = ["shields"];
-
+  self.selectedPWM = ko.observable();
+  self.selectPWM = function(pwm) {
+    console.log('selecting PWM');
+    self.selectedPWM(pwm);
+  };
+  self.applyPWM = function() {
+    console.log('applying PWM settings');
+    var updates = [];
+    for(var i in self.selectedPWM()) {
+      var reg = self.selectedPWM()[i];
+      updates.push({path: reg.path, value: reg.value});
+    }
+  };
   self.reload = function() {
     ss.rpc('lophilo.load', function(err, data) {
       console.dir(data);      
@@ -114,8 +128,6 @@ function LophiloModel(data) {
       console.dir(self);      
     });    
   };
-  
-
   
   /* on/off toggling */
   self.toggle = function(register) {
@@ -165,6 +177,13 @@ var model;
 ss.rpc('lophilo.load', function(err, data) {
   model = new LophiloModel(data);
   ko.applyBindings(model);
+
+  // now setup javascript that is generated from the KO bindings!
+  setupColorPicker('F0', 'leds.led0');
+  setupColorPicker('F1', 'leds.led1');
+  setupColorPicker('F2', 'leds.led2');
+  setupColorPicker('F3', 'leds.led3'); 
+  
 });
 
 function defaultCallback(err, data) {
@@ -189,8 +208,33 @@ ss.event.on('update', function(updates) {
   }
 });
 
+function setupColorPicker(label, path) {
+  console.log('For LED ' + label);
+  var colorpicker = $('#' + label);
+  colorpicker.colorpicker({
+    format: 'hex'
+  });
+
+  var o = findObj(model, path);
+  console.log('latest value: ' +  o.srgb.last() );
+  colorpicker.colorpicker('setValue', '' + o.srgb.last());
+  colorpicker.colorpicker().on('changeColor', function(ev){
+    var values =  ev.color.toRGB();
+    console.log(label + ' changed color ' + JSON.stringify(values));
+    var updates = [];
+    updates.push({path: path + '.r', value: values.r});
+    updates.push({path: path + '.g', value: values.g});
+    updates.push({path: path + '.b', value: values.b});
+    console.log(label + ' updates ' + JSON.stringify(updates));
+
+    ss.rpc('lophilo.multiwrite', updates, defaultCallback);    
+  });          
+}
+  
 function findObj(obj, objPath) {
   var start = obj;
+  if(!objPath) 
+    throw new Error('no path...');
   if(!objPath.split)
     throw new Error('invalid path ' + JSON.stringify(objPath));
 	objPath = objPath.split('.');

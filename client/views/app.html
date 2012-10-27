@@ -17,7 +17,11 @@
             <a href="#about" data-placement="bottom" data-toggle="tab" rel="tooltip"
             title="Some introductory text">About</a>
           </li>
-          <li class="active">
+          <li>
+            <a href="#system" data-placement="bottom" data-toggle="tab" rel="tooltip"
+            title="System Management">System</a>
+          </li>          
+          <li>
             <a href="#shielda" data-placement="bottom" data-toggle="tab" rel="tooltip"
             title="Lophilo Inputs/Outputs">Shield A</a>
           </li>
@@ -25,9 +29,9 @@
             <a href="#shieldb" data-placement="bottom" data-toggle="tab" rel="tooltip"
             title="Lophilo Inputs/Outputs">Shield B</a>
           </li>        
-          <li>
+          <li class="active">
             <a href="#onboardleds" data-placement="bottom" data-toggle="tab" rel="tooltip"
-            title="">On-board RGB LEDS</a>
+            title="">RGB LEDS</a>
           </li>            
         </ul>
         <!-- class="nav nav-tabs" -->
@@ -51,7 +55,7 @@
           </div>
         </div>
    <!-- class="tab-pane" -->
-        <div class="tab-pane fade in active" id="shielda">
+        <div class="tab-pane fade in" id="system">
           <button type="button" 
             data-bind="css: {'btn-success': powerstatus, 'btn-inverse': !powerstatus()}, click: togglepower" 
             class="btn">
@@ -62,9 +66,11 @@
             data-bind="click: reload" 
             class="btn">
             <span>
-              Reload
+              Reload data
             </span>
-          </button>            
+          </button>              
+        </div>
+        <div class="tab-pane fade in" id="shielda">
           <h4>Shield A</h4>
           <button type="button" 
             data-bind="css: {'btn-success': shields.outputEnable(), 'btn-inverse': !shields.outputEnable()}, click: shields.toggleOutputEnable" 
@@ -153,36 +159,31 @@
         </div>
         <!-- class="tab-pane" -->
         <div class="tab-pane fade in" id="shieldb">
-          <button type="button" 
-            data-bind="css: {'btn-success': powerstatus, 'btn-inverse': !powerstatus()}, click: powerstatus" 
-            class="btn">
-            <span data-bind="text: powerstatus() ? 'SHIELDS ON': 'SHIELDS OFF'">
-            </span>
-          </button>        
           <h4>Shield B</h4>
           <h5>Lower (BL)</h5>
-          <div data-bind="with: shields.bl">              
-          </div>
+
           <div class="btn-group" data-bind="foreach: shields.bl">
-            <button type="button" class="btn">              
-              <b data-bind="text: label"></b>:<span data-bind="text: fmen.last"></span>
+            <button type="button" class="btn" data-bind="click: $root.selectPWM" href="#pwm" tabindex="-1" data-toggle="modal">              
+              <b data-bind="text: label"></b></span>
             </button>
           </div>
           <h5>Upper (BH)</h5>
-          <div data-bind="with: shields.bh">             
-          </div>          
-          <div class="btn-group" data-bind="foreach: shields.bh">
-            <button type="button" class="btn" data-bind="click: $parent.toggle">
-              <b data-bind="text: label"></b>:<span data-bind="text: fmen.last"></span>
-            </button>
-          </div>
         </div>
         <!-- class="tab-pane" -->     
         <div class="tab-pane fade in active" id="onboardleds">
-          <div class="btn-group" data-bind="foreach: leds">
-            <button type="button" class="btn">              
-              <b data-bind="text: label"></b>:<span data-bind="text: last"></span>
-            </button>
+          <H4>RGB LEDS</H4>
+          <div class="btn-group" data-bind="foreach: leds.leds">
+            <div 
+              class="input-append color" 
+              data-color="rgb(255, 146, 180)" 
+              data-color-format="rgb" 
+              data-bind="attr: {id: label}">
+              <input type="text" class="span2" value="">
+              <span class="add-on">
+                  <i style="background-color: rgb(255, 146, 180)" data-bind="text: label"></i>
+                </span>
+            </div>
+            -->
           </div>
         </div>
         <!-- class="tab-pane" -->            
@@ -190,6 +191,30 @@
       <!-- class="tab-content" -->
     </div>
     <!-- class="navbar" -->
+    
+    
+    <!-- ################################## -->
+    <!-- Dialog to modify PWM settings -->
+    <!-- ################################## -->
+    <div class="modal hide" id="pwm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+        <h3 id="myModalLabel">PWM (Pulse Width Modulation) settings</h3>
+      </div>
+      
+      <div class="modal-body" data-bind="with: $root.selectedPWM">
+          <h4><span data-bind="label"></span>  
+          <label>DTYC (Duty Cycle)</label>
+          <input type="text" data-bind="value: dtyc.last">
+      </div> <!-- modal-body -->
+    
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        <button class="btn btn-primary" data-bind="click: applyPWM" data-dismiss="modal">Update</button>
+      </div>
+    </div>    
   </div> <!-- container -->
+  <script>
+  </script>
   </body>
 </html>
