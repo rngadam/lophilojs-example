@@ -5,7 +5,7 @@ var http = require('http'),
   os = require('os');
 
 function defaultHandler(err, port) {
-  console.log('Listening on http://'+ os.hostname() + '.local:' + port);
+  console.log('Listening on http://' + os.hostname() + '.local:' + port);
 }
 
 exports.main = function(cb) {
@@ -15,13 +15,7 @@ exports.main = function(cb) {
   ss.client.define('main', {
     view: 'app.html',
     css: ['app.styl', 'bootstrap', 'colorpicker.css'],
-    code: [
-      'libs/jquery.min.js', 
-      'libs/bootstrap-colorpicker.js',       
-      'libs/knockout-2.1.0.js', 
-      'libs/bootstrap.js', 
-      'libs/knockout.mapping-latest.js', 
-      'app'],
+    code: ['libs/jquery.min.js', 'libs/bootstrap-colorpicker.js', 'libs/knockout-2.1.0.js', 'libs/bootstrap.js', 'libs/knockout.mapping-latest.js', 'app'],
     tmpl: '*'
   });
 
@@ -43,7 +37,7 @@ exports.main = function(cb) {
   var server = http.Server(ss.http.middleware);
   // process.env.PORT: selected by cloud9
   // 0: let the operating system select the value
-  server.listen(process.env.PORT || 0); 
+  server.listen(process.env.PORT || 0);
 
   // Start SocketStream
   ss.start(server);
