@@ -89,18 +89,29 @@
           
           <table class="table">
             <tr data-bind="foreach: shields.al">
-            <td>
-              <b data-bind="text: label"></b>
+              <td>
+                <b data-bind="text: label"></b>
+              </td>
+            </tr> <! -- foreach -->
             <tr data-bind="foreach: shields.al">
+              <td>
+                <button type="button" class="btn" data-bind="click: $parent.toggle">              
+                  <span data-bind="text: last"></span>
+                </button>
+              </td>
+            </tr> <!-- foreach -->
+            <!-- ko foreach: shields.al.bitfields -->
+            <tr data-bind="foreach: $data">
             <td>
-            <button type="button" class="btn" data-bind="click: $parent.toggle">              
-              <span data-bind="text: last"></span>
-            </button>
-            <tr data-bind="foreach: shields.al">
-            <td>
-            <button type="button" class="btn" data-bind="click: toggleinout">              
-              <span data-bind="text: inout() ? 'OUT' : 'INP'"></span>
-            </button>
+            <button 
+              type="button" 
+              class="btn" 
+              data-bind="css: {'btn-success': inout, 'btn-inverse': !inout()}, click: toggle">              
+              <span data-bind="text: label"></span>
+            </button>     
+            </td>
+            </tr>
+            <!-- /ko -->    
           </table>
           
           <h5>Upper (AH)</h5>
@@ -112,21 +123,33 @@
               All Zeros
             </button>                
           </div>          
+          
           <table class="table">
             <tr data-bind="foreach: shields.ah">
-            <td>
-              <b data-bind="text: label"></b>
+              <td>
+                <b data-bind="text: label"></b>
+              </td>
+            </tr> <! -- foreach -->
             <tr data-bind="foreach: shields.ah">
+              <td>
+                <button type="button" class="btn" data-bind="click: $parent.toggle">              
+                  <span data-bind="text: last"></span>
+                </button>
+              </td>
+            </tr> <!-- foreach -->
+            <!-- ko foreach: shields.ah.bitfields -->
+            <tr data-bind="foreach: $data">
             <td>
-            <button type="button" class="btn" data-bind="click: $parent.toggle">              
-              <span data-bind="text: last"></span>
-            </button>
-            <tr data-bind="foreach: shields.ah">
-            <td>
-            <button type="button" class="btn" data-bind="click: toggleinout">              
-              <span data-bind="text: inout() ? 'OUT' : 'INP'"></span>
-            </button>
-          </table>
+            <button 
+              type="button" 
+              class="btn" 
+              data-bind="css: {'btn-success': inout, 'btn-inverse': !inout()}, click: toggle">              
+              <span data-bind="text: label"></span>
+            </button>     
+            </td>
+            </tr>
+            <!-- /ko -->    
+          </table>          
         </div>
         <!-- class="tab-pane" -->
         <div class="tab-pane fade in" id="shieldb">

@@ -8,6 +8,7 @@ console.log('App Loading');
 function debug(obj) {
   console.log(JSON.stringify(obj));
 }
+
 function LophiloModel(data) {
   var self = this;
   
@@ -23,49 +24,72 @@ function LophiloModel(data) {
       self);
   }
   
-  function makeComputedInOutValue(objPath) {
+  function makeComputedInOutValue(objPath, target) {
       return ko.computed({
         'read': function() {
           var register = findObj(self, objPath);
-          return (1 << register.id() & self.gpio0.doe.last()) !== 0;
+          var bitfield = findObj(self, target);
+          return (1 << register.id() & bitfield.last()) !== 0;
         },
         'write': function(value) {
           var register = findObj(self, objPath);
+          var bitfield = findObj(self, target);          
           var newValue;
           if(value) {
-            newValue = (1 << register.id()) | self.gpio0.doe.last();
+            newValue = (1 << register.id()) |  bitfield.last();
           } else {
-            newValue = (~(1 << register.id())) & self.gpio0.doe.last();
+            newValue = (~(1 << register.id())) & bitfield.last();
           }
-          ss.rpc('lophilo.write', 'gpio0.doe', newValue, defaultCallback);
-          if(!value) {
-            newValue = (1 << register.id()) | self.gpio0.din.last();
-          } else {
-            newValue = (~(1 << register.id())) & self.gpio0.din.last();
-          }          
-          ss.rpc('lophilo.write', 'gpio0.din', newValue, defaultCallback);
+          ss.rpc('lophilo.write', target, newValue, defaultCallback);
         }
       }, self);    
   }
   
-  function makeToggle(objPath) {
-    return function() {
-      var obj = findObj(self, objPath);
-      obj.inout(!obj.inout());
-    };
-  }
+//  function makeBitFieldToggle(objPath, targetProperty) {
+//    return function() {
+//      var obj = findObj(self, objPath);
+//      obj[targetProperty](!obj[targetProperty]());
+//    };
+//  }
   
+  function makeBitFieldToggle(inout) {
+    return function() {
+      inout(!inout());
+    };
+  }  
   function swapArrayMembersDependent(array) {
     for(var i in array()) {
       var path = array()[i];
       //console.log(path);  
       var reg = findObj(self, path);
-      reg.inout = makeComputedInOutValue(path);
-      reg.toggleinout = makeToggle(path);
-      var copy = jQuery.extend({}, reg); 
+  
+      //var copy = jQuery.extend({}, reg); 
       
       // http://stackoverflow.com/questions/6425409/how-to-replace-a-given-index-element-in-knockoutjs
-      array.replace(array()[i], copy); 
+      array.replace(array()[i], reg); 
+    }
+  }
+  
+  function createBitfields(array) {
+    var bitfields = [
+        'doe', 'din', 'dout', 'iclr', 'ie', 'iedge', 'iinv', 'imask'
+    ];
+        
+    array.bitfields = [];
+    for(var k in bitfields) {
+      array.bitfields.push([]);
+    }
+    
+    for(var i in array()) {
+      var path = array()[i].path();    
+      for(var j in bitfields) {
+        var bitfieldname = bitfields[j];
+        var bitfield = {};
+        bitfield.inout = makeComputedInOutValue(path, 'gpio0.' + bitfieldname);
+        bitfield.toggle = makeBitFieldToggle(bitfield.inout);  
+        bitfield.label = bitfieldname;
+        array.bitfields[j].push(bitfield);
+      }    
     }
   }
   
@@ -75,7 +99,9 @@ function LophiloModel(data) {
   console.dir(self);
 
   swapArrayMembersDependent(self.shields.al);
+  createBitfields(self.shields.al);
   swapArrayMembersDependent(self.shields.ah);
+  createBitfields(self.shields.ah);  
   swapArrayMembersDependent(self.shields.bl);
   swapArrayMembersDependent(self.shields.bh);
 
