@@ -172,19 +172,19 @@
         <!-- class="tab-pane" -->     
         <div class="tab-pane fade in active" id="onboardleds">
           <H4>RGB LEDS</H4>
-          <div class="btn-group" data-bind="foreach: leds.leds">
+          <div data-bind="foreach: leds.leds">
             <div 
               class="input-append color" 
               data-color="rgb(255, 146, 180)" 
               data-color-format="rgb" 
               data-bind="attr: {id: label}">
               <label data-bind="text: label"></label>
-              <input id="hexa" type="text" class="span2" value="" readonly>
+              
+              <input type="text" class="span2" data-bind="value: srgb.hex()" value="">
               <span class="add-on">
                   <i style="background-color: rgb(255, 146, 180)"></i>
                 </span>
             </div>
-            -->
           </div>
         </div>
         <!-- class="tab-pane" -->            

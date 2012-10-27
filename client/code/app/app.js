@@ -1,5 +1,5 @@
 'use strict';
-/*global jQuery:true, ko:true, ss:true */
+/*global jQuery:true, $:true, ko:true, ss:true */
 
 // Client Code
 
@@ -17,6 +17,24 @@ function turnObjectsIntoArray(src, array) {
     }
   });
 }
+
+function setupColorPicker(label, path) {
+    var colorpicker = $('#' + label);
+    colorpicker.colorpicker({
+      format: 'hex'
+    });
+  
+    var o = findObj(model, path);
+    colorpicker.colorpicker('setValue', o.srgb.hex());
+  
+    colorpicker.colorpicker().on('changeColor', function(ev) {
+      o.srgb.hex(ev.color.toHex());
+    });
+  
+    o.srgb.last.subscribe(function updateColorPicker(newValue) {
+      colorpicker.colorpicker('setValue', o.srgb.hex());
+    });
+  }
 
 function LophiloModel(data) {
   var self = this;
@@ -70,7 +88,21 @@ function LophiloModel(data) {
       array.replace(array()[i], reg);
     }
   }
+  
+  function makeComputedHex(obj) {
+    return ko.computed({      
+      'read': function() {
+        return '#' + Number(obj.last()).toString(16);
+      },
+      'write':  function(newValue) {
+        log('new value ') + newValue;
+        var decimalValue = parseInt(newValue.slice(1), 16);
+        ss.rpc('lophilo.write', obj.path(), decimalValue, defaultCallback);
+      }
+    } , self);
+  }
 
+  
   function createBitfields(array) {
     var bitfields = ['doe', 'din', 'dout', 'iclr', 'ie', 'iedge', 'iinv', 'imask'];
 
@@ -109,6 +141,10 @@ function LophiloModel(data) {
 
   self.leds.leds = [];
   turnObjectsIntoArray(self.leds, self.leds.leds);
+  self.leds.led0.srgb.hex = makeComputedHex(self.leds.led0.srgb);
+  self.leds.led1.srgb.hex = makeComputedHex(self.leds.led1.srgb);
+  self.leds.led2.srgb.hex = makeComputedHex(self.leds.led2.srgb);
+  self.leds.led3.srgb.hex = makeComputedHex(self.leds.led3.srgb);
 
   ko.mapping.defaultOptions().ignore = ["shields"];
 
@@ -183,12 +219,15 @@ var model;
 ss.rpc('lophilo.load', function(err, data) {
   model = new LophiloModel(data);
   ko.applyBindings(model);
-
+  console.log('bindings applied');
+  
   // now setup javascript that is generated from the KO bindings!
   setupColorPicker('F0', 'leds.led0');
   setupColorPicker('F1', 'leds.led1');
   setupColorPicker('F2', 'leds.led2');
   setupColorPicker('F3', 'leds.led3');
+  
+  console.log('javascript hooks added');
 
 });
 
@@ -247,44 +286,6 @@ ss.event.on('update', function(updates) {
   }
 });
 
-function setupColorPicker(label, path) {
-  var colorpicker = $('#' + label);
-  colorpicker.colorpicker({
-    format: 'hex'
-  });
-
-  var o = findObj(model, path);
-  colorpicker.colorpicker('setValue', '#' + Number(o.srgb.last()).toString(16));
-
-  colorpicker.colorpicker().on('changeColor', function(ev) {
-    var values = ev.color.toRGB();
-    //console.log(label + ' changed color ' + JSON.stringify(values));
-    var updates = [];
-    updates.push({
-      path: path + '.r',
-      value: values.r
-    });
-    updates.push({
-      path: path + '.g',
-      value: values.g
-    });
-    updates.push({
-      path: path + '.b',
-      value: values.b
-    });
-    //console.log(label + ' updates ' + JSON.stringify(updates));
-    ss.rpc('lophilo.multiwrite', updates, defaultCallback);
-    // TODO figure out a way to update the hex field in realtime
-    colorpicker.val(ev.color.toHex());
-  });
-
-  o.srgb.last.subscribe(function updateColorPicker(newValue) {
-    colorpicker.colorpicker('setValue', '#' + Number(newValue).toString(16));
-  });
-  // TODO: find a better way to get the hexa values to update
-  colorpicker.colorpicker('show');
-  colorpicker.colorpicker('hide');
-}
 
 function findObj(obj, objPath) {
   var start = obj;
