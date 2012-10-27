@@ -79,7 +79,7 @@ function LophiloModel(data) {
   swapArrayMembersDependent(self.shields.bl);
   swapArrayMembersDependent(self.shields.bh);
 
-  //ko.mapping.defaultOptions().ignore = ["shields"];
+  ko.mapping.defaultOptions().ignore = ["shields"];
 
   self.reload = function() {
     ss.rpc('lophilo.load', function(err, data) {
