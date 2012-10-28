@@ -25,11 +25,11 @@
             <a href="#shielda" data-placement="bottom" data-toggle="tab" rel="tooltip"
             title="Lophilo Inputs/Outputs">Shield A</a>
           </li>
-          <li>
+          <li class="active">
             <a href="#shieldb" data-placement="bottom" data-toggle="tab" rel="tooltip"
             title="Lophilo Inputs/Outputs">Shield B</a>
           </li>        
-          <li class="active">
+          <li>
             <a href="#onboardleds" data-placement="bottom" data-toggle="tab" rel="tooltip"
             title="">RGB LEDS</a>
           </li>            
@@ -158,7 +158,7 @@
           </table>          
         </div>
         <!-- class="tab-pane" -->
-        <div class="tab-pane fade in" id="shieldb">
+        <div class="tab-pane fade in active" id="shieldb">
           <h4>Shield B</h4>
           <h5>Lower (BL)</h5>
 
@@ -170,7 +170,7 @@
           <h5>Upper (BH)</h5>
         </div>
         <!-- class="tab-pane" -->     
-        <div class="tab-pane fade in active" id="onboardleds">
+        <div class="tab-pane fade in " id="onboardleds">
           <H4>RGB LEDS</H4>
           <div data-bind="foreach: leds.leds">
             <div 
@@ -202,15 +202,49 @@
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
         <h3 id="myModalLabel"><span data-bind="text: $root.selectedPWM.label"></span> PWM (Pulse Width Modulation) settings</h3>
       </div>
-      
+      <div id="slider"></div>
       <div class="modal-body" data-bind="with: $root.selectedPWM">
           <label>DTYC (Duty Cycle)</label>
-          <input type="text" data-bind="value: dtyc.last">
+          <span data-bind="text: 'slider.' + path() + '.dtyc'"></span>
+          <div data-bind="attr: {id: 'slider.' + path() + '.dtyc'}, value: dtyc.last">
+          </div>
+          <label>GATE (Gating value)</label>
+          <div data-bind="attr: {id: 'slider.' + path() + '.gate'}, value: gate.last">   
+          </div>
+          <label>PMEN</label>
+          <button type="button" 
+            data-bind="css: {'btn-success': pmen.boolean(), 'btn-inverse': !pmen.boolean()}, click: pmen.toggle" 
+            class="btn">
+            <span data-bind="text: pmen.boolean() ? 'PMEN ON': 'PMEN OFF'">
+            </span>
+          </button>         
+          <label>FMEN</label>
+          <button type="button" 
+            data-bind="css: {'btn-success': fmen.boolean(), 'btn-inverse': !fmen.boolean()}, click: fmen.toggle" 
+            class="btn">
+            <span data-bind="text: fmen.boolean() ? 'FMEN ON': 'FMEN OFF'">
+            </span>
+          </button>      
+          <label>OUTINV</label>
+          <button type="button" 
+            data-bind="css: {'btn-success': outinv.boolean(), 'btn-inverse': !outinv.boolean()}, click: outinv.toggle" 
+            class="btn">
+            <span data-bind="text: outinv.boolean() ? 'OUTINV ON': 'OUTINV OFF'">
+            </span>
+          </button>  
+          <label>Reset</label>          
+          <button type="reset" 
+            data-bind="css: {'btn-success': reset.boolean(), 'btn-inverse': !reset.boolean()}, click: reset.toggle" 
+            class="btn">
+            <span data-bind="">
+              RESET
+            </span>
+          </button>           
       </div> <!-- modal-body -->
     
       <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-        <button class="btn btn-primary" data-bind="click: applyPWM" data-dismiss="modal">Update</button>
+        <!-- <button class="btn btn-primary" data-bind="click: applyPWM" data-dismiss="modal">Update</button> -->
       </div>
     </div>    
   </div> <!-- container -->

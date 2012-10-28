@@ -15,6 +15,7 @@ exports.actions = function(req, res, ss) {
       lophilo.watch(/gpio0/);
       lophilo.watch(/power/);
       lophilo.watch(/leds/);
+      lophilo.watch(/pwm0/);      
       lophilo.removeAllListeners('update');
       lophilo.on('update', passThroughUpdateCallback);
       lophilo.readAll(function() {

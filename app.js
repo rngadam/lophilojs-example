@@ -14,8 +14,20 @@ exports.main = function(cb) {
   // Define a single-page client called 'main'
   ss.client.define('main', {
     view: 'app.html',
-    css: ['app.styl', 'bootstrap', 'colorpicker.css'],
-    code: ['libs/jquery.min.js', 'libs/bootstrap-colorpicker.js', 'libs/knockout-2.1.0.js', 'libs/bootstrap.js', 'libs/knockout.mapping-latest.js', 'app'],
+    css: [
+      'app.styl', 
+      'bootstrap', 
+      'colorpicker.css', 
+      'smoothness/jquery-ui-1.9.1.custom.min.css'
+    ],
+    code: [
+      'libs/jquery.min.js', 
+      'libs/jquery-ui-1.9.1.custom.min.js', 
+      'libs/bootstrap-colorpicker.js', 
+      'libs/knockout-2.1.0.js', 
+      'libs/bootstrap.js', 
+      'libs/knockout.mapping-latest.js', 
+      'app'],
     tmpl: '*'
   });
 
