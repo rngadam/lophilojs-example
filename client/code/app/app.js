@@ -5,10 +5,56 @@
 
 console.log('App Loading');
 
+/*
+ * LOGGING
+ */
 function debug(obj) {
   console.log(JSON.stringify(obj));
 }
 
+var MessageThrottler = function() {
+  var self = this;
+  self.lastMessage;
+  self.lastMessageCount;
+  self.conditionallyOutput = function(message, logger) {
+    if (self.lastMessage !== message) {
+      if (self.lastMessageCount > 1) {
+        logger('last message repeated ' + self.lastMessageCount);
+      }
+      console.log(message);
+      self.lastMessage = message;
+      self.lastMessageCount = 0;
+    }
+    else {
+      self.lastMessageCount++;
+      if (self.lastMessageCount == 2) {
+        logger('(last message repeating)');
+      }
+    }
+  };
+};
+
+var log = function() {
+  console.log.apply(console, arguments);
+};
+var logerr = function() {
+  console.log.apply(console, arguments);
+};
+
+var messages = new MessageThrottler();
+
+function defaultCallback(err, data) {
+  if (err) {
+    messages.conditionallyOutput(err, log);
+  }
+  else if (data) {
+    messages.conditionallyOutput(data, logerr);
+  }
+}
+
+/*
+ * REFLECTION
+ */
 function turnObjectsIntoArray(src, array) {
   Object.keys(src).forEach(function(k) {
     var o = src[k];
@@ -17,7 +63,6 @@ function turnObjectsIntoArray(src, array) {
     }
   });
 }
-
 
 function findObj(obj, objPath) {
   var start = obj;
@@ -67,6 +112,9 @@ function iterateObject(object, fnc) {
   }
 }
 
+/*
+ * SERVER
+ */
 function multiwrite(value, target) {
   var updates = [];
   iterateObject(target, function(register) {
@@ -97,6 +145,9 @@ function multiwrite(value, target) {
   }
 }
 
+/*
+ * UI
+ */
 function setupColorPicker(label, path) {
   var colorpicker = $('#' + label);
   colorpicker.colorpicker({
@@ -115,13 +166,57 @@ function setupColorPicker(label, path) {
   });
 }
 
-function setupSlider(name) {
-  $(name).slider();
+function setupSlider(name, setter) {
+  //console.log('looking up ' + name);
+  var o = $('#' + name);
+  if(!o.length)
+    console.log('not found: ' + name);
+  o.slider({
+    range: 'max',
+    max: 0xFFFFFF,
+    step: 100,
+    value: setter(),
+    slide: function(event, ui) {
+      setter(ui.value);
+    }
+  });
 }
 
+/*
+ * MODEL
+ */
 function LophiloModel(data) {
   var self = this;
 
+  console.log('loading data');
+  console.dir(data);
+  ko.mapping.fromJS(data, {}, self);
+
+  console.dir(self);
+
+  swapArrayMembersDependent(self.shields.al);
+  createBitfields(self.shields.al);
+  swapArrayMembersDependent(self.shields.ah);
+  createBitfields(self.shields.ah);
+
+  ko.mapping.defaultOptions().ignore = ["shields"];
+  swapArrayMembersDependent(self.shields.bl);
+  swapArrayMembersDependent(self.shields.bh);
+
+  createToggles(self.pwm0);
+
+  self.leds.leds = [];
+  turnObjectsIntoArray(self.leds, self.leds.leds);
+  self.leds.led0.srgb.hex = makeComputedHex(self.leds.led0.srgb);
+  self.leds.led1.srgb.hex = makeComputedHex(self.leds.led1.srgb);
+  self.leds.led2.srgb.hex = makeComputedHex(self.leds.led2.srgb);
+  self.leds.led3.srgb.hex = makeComputedHex(self.leds.led3.srgb);
+
+  self.selectedPWM = ko.observable();
+
+  self.allones = multiwrite.bind(null, 1);
+  self.allzeros = multiwrite.bind(null, 0);
+  
   // we want to preserve the value of port at creation, so 
   // we need to create the function inside another function with the 
   // proper port as parameter
@@ -135,7 +230,7 @@ function LophiloModel(data) {
     self);
   }
 
-  function makeComputedInOutValue(objPath, target) {
+  function makeComputedInOutBitfieldValue(objPath, target) {
     return ko.computed({
       'read': function() {
         var register = findObj(self, objPath);
@@ -184,6 +279,16 @@ function LophiloModel(data) {
     } , self);
   }
 
+  function makeComputedRangeValue(obj) {
+    return ko.computed({      
+      'read': function() {
+        return obj.last();
+      },
+      'write':  function(newValue) {        
+        ss.rpc('lophilo.write', obj.path(), newValue, defaultCallback);
+      }
+    } , self).extend({ throttle: self.updateIntervalMs() });
+  }
   
   function createBitfields(array) {
     var bitfields = ['doe', 'din', 'dout', 'iclr', 'ie', 'iedge', 'iinv', 'imask'];
@@ -199,7 +304,7 @@ function LophiloModel(data) {
       for (var j in bitfields) {
         var bitfieldname = bitfields[j];
         var bitfield = {};
-        bitfield.inout = makeComputedInOutValue(path, 'gpio0.' + bitfieldname);
+        bitfield.inout = makeComputedInOutBitfieldValue(path, 'gpio0.' + bitfieldname);
         bitfield.toggle = makeBitFieldToggle(bitfield.inout);
         bitfield.label = bitfieldname;
         array.bitfields[j].push(bitfield);
@@ -216,10 +321,10 @@ function LophiloModel(data) {
   function makeBoolean(obj) {
     return ko.computed({      
       'read': function() {
-        return obj.last() === 0;
+        return obj.last() === 1;
       },
       'write':  function(newValue) {        
-        ss.rpc('lophilo.write', obj().path(), newValue ? 1:0, defaultCallback);
+        ss.rpc('lophilo.write', obj.path(), newValue ? 1 : 0, defaultCallback);
       }
     } , self);
   }
@@ -233,57 +338,36 @@ function LophiloModel(data) {
         if(!register.type || register.type() !== 'REGISTER')
           return;        
         if(register.valuetype() === 'BOOLEAN') {
-          register.toggle = makeToggle(register.last);
-          register.boolean = makeBoolean(register);
+          register.boolean = makeBoolean(register);          
+          register.toggle = makeToggle(register.boolean);
         } else {
-          self.sliders.push('#slider.' + obj.path());
+          // jQuery selector does not work with .
+          register.jqueryid = 'slider_' + register.path().split('.').join('_');
+          register.record = makeComputedRangeValue(register);
         }
       });
     });
   }
   
-  console.log('loading data');
-  console.dir(data);
-  ko.mapping.fromJS(data, {}, self);
+  function addResetObservable(observed, register) {
+    observed.subscribe(function(newValue) {
+      ss.rpc('lophilo.write', register.path(), 0, defaultCallback);
+    });
+  }
 
-  console.dir(self);
-
-  swapArrayMembersDependent(self.shields.al);
-  createBitfields(self.shields.al);
-  swapArrayMembersDependent(self.shields.ah);
-  createBitfields(self.shields.ah);
-
-  swapArrayMembersDependent(self.shields.bl);
-  swapArrayMembersDependent(self.shields.bh);
-  self.sliders = [];
-  createToggles(self.pwm0);
-
-  self.leds.leds = [];
-  turnObjectsIntoArray(self.leds, self.leds.leds);
-  self.leds.led0.srgb.hex = makeComputedHex(self.leds.led0.srgb);
-  self.leds.led1.srgb.hex = makeComputedHex(self.leds.led1.srgb);
-  self.leds.led2.srgb.hex = makeComputedHex(self.leds.led2.srgb);
-  self.leds.led3.srgb.hex = makeComputedHex(self.leds.led3.srgb);
-
-  ko.mapping.defaultOptions().ignore = ["shields"];
-
-  self.selectedPWM = ko.observable();
   self.selectPWM = function(pwm) {
     console.log('selecting PWM');
     self.selectedPWM(pwm);
+    setupSlider(pwm.gate.jqueryid, pwm.gate.record);    
+    setupSlider(pwm.dtyc.jqueryid, pwm.dtyc.record); 
+    addResetObservable(pwm.gate.record, pwm.reset);
+    addResetObservable(pwm.dtyc.record, pwm.reset);   
+    
+    addResetObservable(pwm.pmen.boolean, pwm.reset);
+    addResetObservable(pwm.fmen.boolean, pwm.reset);   
+    addResetObservable(pwm.outinv.boolean, pwm.reset);       
   };
-  //settings applied in real-time
-//  self.applyPWM = function() {
-//    console.log('applying PWM settings');
-//    var updates = [];
-//    for (var i in self.selectedPWM()) {
-//      var reg = self.selectedPWM()[i];
-//      updates.push({
-//        path: reg.path,
-//        value: reg.value
-//      });
-//    }
-//  };
+
   self.reload = function() {
     ss.rpc('lophilo.load', function(err, data) {
       console.dir(data);
@@ -318,6 +402,7 @@ function LophiloModel(data) {
   self.shields.toggleOutputEnable = function() {
     self.shields.outputEnable(self.shields.outputEnable() ? false : true);
   };
+  
   self.shields.outputEnable = ko.computed({
     'read': function() {
       // 0x0 is all off, any other value is from 1 to max leds on!
@@ -329,13 +414,26 @@ function LophiloModel(data) {
       value ? self.GPIO_ALL_ON() : self.GPIO_ALL_OFF(), defaultCallback);
     }
   }, self);
+  
+  self.resetAllPWM = function() {
+    var updates = [];
+    iterateObject(self.pwm0, function(pwm) {
+      if(!pwm.reset)
+        return;
+      updates.push({path: pwm.dtyc.path(), value: 0x0});
+      updates.push({path: pwm.gate.path(), value: 0x0});
+      updates.push({path: pwm.reset.path(), value: 0x0});
+    });
+    ss.rpc('lophilo.multiwrite', updates, defaultCallback);
+  };
 
-  self.allones = multiwrite.bind(null, 1);
-  self.allzeros = multiwrite.bind(null, 0);
 }
 
 var model;
 
+/*
+ * INITIAL LOAD AND KNOCKOUT BINDING
+ */
 ss.rpc('lophilo.load', function(err, data) {
   model = new LophiloModel(data);
   ko.applyBindings(model);
@@ -346,54 +444,10 @@ ss.rpc('lophilo.load', function(err, data) {
   setupColorPicker('F1', 'leds.led1');
   setupColorPicker('F2', 'leds.led2');
   setupColorPicker('F3', 'leds.led3');
-  
-  for(var i in model.sliders) {
-    console.log(model.sliders[i]);
-    setupSlider(model.sliders[i]);
-  }
+
   console.log('javascript hooks added');
 
 });
-
-var MessageThrottler = function() {
-  var self = this;
-  self.lastMessage;
-  self.lastMessageCount;
-  self.conditionallyOutput = function(message, logger) {
-    if (self.lastMessage !== message) {
-      if (self.lastMessageCount > 1) {
-        logger('last message repeated ' + self.lastMessageCount);
-      }
-      console.log(message);
-      self.lastMessage = message;
-      self.lastMessageCount = 0;
-    }
-    else {
-      self.lastMessageCount++;
-      if (self.lastMessageCount == 2) {
-        logger('(last message repeating)');
-      }
-    }
-  };
-};
-
-var log = function() {
-  console.log.apply(console, arguments);
-};
-var logerr = function() {
-  console.log.apply(console, arguments);
-};
-
-var messages = new MessageThrottler();
-
-function defaultCallback(err, data) {
-  if (err) {
-    messages.conditionallyOutput(err, log);
-  }
-  else if (data) {
-    messages.conditionallyOutput(data, logerr);
-  }
-}
 
 ss.event.on('update', function(updates) {
   //console.log('client received update ' + JSON.stringify(updates));

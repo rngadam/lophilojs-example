@@ -12,6 +12,7 @@ exports.actions = function(req, res, ss) {
   }
   return {
     load: function() {
+      // TODO make watching a toggle based on current UI tab
       lophilo.watch(/gpio0/);
       lophilo.watch(/power/);
       lophilo.watch(/leds/);

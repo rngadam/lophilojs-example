@@ -160,14 +160,23 @@
         <!-- class="tab-pane" -->
         <div class="tab-pane fade in active" id="shieldb">
           <h4>Shield B</h4>
+          <button type="button" 
+            data-bind="click: resetAllPWM" 
+            class="btn">
+            Reset All
+          </button>              
           <h5>Lower (BL)</h5>
-
           <div class="btn-group" data-bind="foreach: shields.bl">
             <button type="button" class="btn" data-bind="click: $root.selectPWM" href="#pwm" tabindex="-1" data-toggle="modal">              
               <b data-bind="text: label"></b></span>
             </button>
           </div>
           <h5>Upper (BH)</h5>
+          <div class="btn-group" data-bind="foreach: shields.bh">
+            <button type="button" class="btn" data-bind="click: $root.selectPWM" href="#pwm" tabindex="-1" data-toggle="modal">              
+              <b data-bind="text: label"></b></span>
+            </button>
+          </div>          
         </div>
         <!-- class="tab-pane" -->     
         <div class="tab-pane fade in " id="onboardleds">
@@ -197,19 +206,22 @@
     <!-- ################################## -->
     <!-- Dialog to modify PWM settings -->
     <!-- ################################## -->
-    <div class="modal hide" id="pwm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal hide" id="pwm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true"  data-bind="with: $root.selectedPWM">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
-        <h3 id="myModalLabel"><span data-bind="text: $root.selectedPWM.label"></span> PWM (Pulse Width Modulation) settings</h3>
+        <h3 id="myModalLabel">
+          <span data-bind="text: label">
+          </span> PWM (Pulse Width Modulation) settings</h3>
       </div>
-      <div id="slider"></div>
-      <div class="modal-body" data-bind="with: $root.selectedPWM">
-          <label>DTYC (Duty Cycle)</label>
-          <span data-bind="text: 'slider.' + path() + '.dtyc'"></span>
-          <div data-bind="attr: {id: 'slider.' + path() + '.dtyc'}, value: dtyc.last">
+      <div id="slider.slider"></div>
+      <div class="modal-body">
+          <label>Duty Cycle (DTYC)</label>
+          <input type="input" data-bind="value:  dtyc.record"></input>
+          <div data-bind="attr: {id: dtyc.jqueryid}, value: dtyc.record">
           </div>
-          <label>GATE (Gating value)</label>
-          <div data-bind="attr: {id: 'slider.' + path() + '.gate'}, value: gate.last">   
+          <label>Gating value (GATE)</label>
+          <input type="input" data-bind="value:  gate.record"></input>
+          <div data-bind="attr: {id: gate.jqueryid}, value: gate.record">   
           </div>
           <label>PMEN</label>
           <button type="button" 
@@ -231,15 +243,7 @@
             class="btn">
             <span data-bind="text: outinv.boolean() ? 'OUTINV ON': 'OUTINV OFF'">
             </span>
-          </button>  
-          <label>Reset</label>          
-          <button type="reset" 
-            data-bind="css: {'btn-success': reset.boolean(), 'btn-inverse': !reset.boolean()}, click: reset.toggle" 
-            class="btn">
-            <span data-bind="">
-              RESET
-            </span>
-          </button>           
+          </button>             
       </div> <!-- modal-body -->
     
       <div class="modal-footer">
