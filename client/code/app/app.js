@@ -173,12 +173,15 @@ function setupSlider(name, setter) {
     console.log('not found: ' + name);
   o.slider({
     range: 'max',
-    max: 0xFFFFFF,
+    max: 0xFFFFFFFF,
     step: 100,
     value: setter(),
     slide: function(event, ui) {
       setter(ui.value);
     }
+  });
+  setter.subscribe(function(newValue) {
+    o.slider('option', 'value', newValue);
   });
 }
 
@@ -203,7 +206,8 @@ function LophiloModel(data) {
   swapArrayMembersDependent(self.shields.bl);
   swapArrayMembersDependent(self.shields.bh);
 
-  createToggles(self.pwm0);
+  self.pwms = [];
+  setupPWM(self.pwm0);
 
   self.leds.leds = [];
   turnObjectsIntoArray(self.leds, self.leds.leds);
@@ -279,6 +283,36 @@ function LophiloModel(data) {
     } , self);
   }
 
+  function makeComputedPercent(path, numerator, denominator) {
+    return ko.computed({      
+      'read': function() {
+        return Math.round((numerator()/denominator())*100);
+      },
+      'write':  function(newValue) {        
+        var count = Math.round((newValue/100)*denominator());
+        ss.rpc('lophilo.write', path, count, defaultCallback);
+      }
+    } , self);
+  }
+
+  function makeComputedTime(path, count, frequency) {
+    return ko.computed({      
+      'read': function() {
+        var tick_s = 1/frequency();
+        var time = count()*tick_s;
+        if(time > 1)
+          return Math.ceil(time);
+        else
+          return time;
+      },
+      'write':  function(newTime) {    
+        var tick_s = 1/frequency();        
+        var count = Math.round(newTime/tick_s);
+        ss.rpc('lophilo.write', path, count, defaultCallback);
+      }
+    } , self);
+  }
+  
   function makeComputedRangeValue(obj) {
     return ko.computed({      
       'read': function() {
@@ -329,26 +363,45 @@ function LophiloModel(data) {
     } , self);
   }
   
-  function createToggles(container) {
+  function setupPWM(container) {
     iterateObject(container, function(obj) {
       if(!obj || !obj.type)
         return;
-
-      iterateObject(obj, function(register) {
+      self.pwms.push(obj);
+      iterateObject(obj, function(register) {     
         if(!register.type || register.type() !== 'REGISTER')
-          return;        
-        if(register.valuetype() === 'BOOLEAN') {
-          register.boolean = makeBoolean(register);          
-          register.toggle = makeToggle(register.boolean);
-        } else {
-          // jQuery selector does not work with .
-          register.jqueryid = 'slider_' + register.path().split('.').join('_');
-          register.record = makeComputedRangeValue(register);
+          return;
+        switch(register.name()) {
+          case 'fmen':
+          case 'pmen':
+            // ignore for now
+            break;
+          case 'outinv':
+            register.boolean = makeBoolean(register);          
+            register.toggle = makeToggle(register.boolean);
+            break;
+          case 'dtyc':
+            register.percent = makeComputedPercent(register.path(), register.last, obj.gate.last);
+            register.jqueryid = 'slider_' + register.path().split('.').join('_');
+            register.record = makeComputedRangeValue(register);
+            break;
+          case 'gate':
+            register.jqueryid = 'slider_' + register.path().split('.').join('_');
+            register.record = makeComputedRangeValue(register);
+            register.time = makeComputedTime(
+              register.path(), 
+              register.last, 
+              function() { return 200*1e6; },
+              function() { return 1000; /*ms*/ });
+            break;
+          default:
+//            log('error, unsupported: ' + register.name());
+            break;
         }
       });
     });
   }
-  
+
   function addResetObservable(observed, register) {
     observed.subscribe(function(newValue) {
       ss.rpc('lophilo.write', register.path(), 0, defaultCallback);
@@ -360,13 +413,16 @@ function LophiloModel(data) {
     self.selectedPWM(pwm);
     setupSlider(pwm.gate.jqueryid, pwm.gate.record);    
     setupSlider(pwm.dtyc.jqueryid, pwm.dtyc.record); 
-    addResetObservable(pwm.gate.record, pwm.reset);
-    addResetObservable(pwm.dtyc.record, pwm.reset);   
     
-    addResetObservable(pwm.pmen.boolean, pwm.reset);
-    addResetObservable(pwm.fmen.boolean, pwm.reset);   
+    //TODO keep observables return and dispose() at the end
+    addResetObservable(pwm.gate.record, pwm.reset);
+    addResetObservable(pwm.dtyc.record, pwm.reset);  
+    //addResetObservable(pwm.pmen.boolean, pwm.reset);
+    //addResetObservable(pwm.fmen.boolean, pwm.reset);   
     addResetObservable(pwm.outinv.boolean, pwm.reset);       
   };
+  
+
 
   self.reload = function() {
     ss.rpc('lophilo.load', function(err, data) {
@@ -423,10 +479,42 @@ function LophiloModel(data) {
       updates.push({path: pwm.dtyc.path(), value: 0x0});
       updates.push({path: pwm.gate.path(), value: 0x0});
       updates.push({path: pwm.reset.path(), value: 0x0});
+      updates.push({path: pwm.fmen.path(), value: 0x0});
+      updates.push({path: pwm.pmen.path(), value: 0x0});
+      updates.push({path: pwm.outinv.path(), value: 0x0});
     });
     ss.rpc('lophilo.multiwrite', updates, defaultCallback);
   };
 
+  self.setPWMClock = function() {
+    var updates = [];
+    var tick = 1/(200*1e6);   // 5e-9
+    var power = -8;
+    var time;
+    
+    iterateObject(self.pwm0, function(pwm) {
+      if(!pwm.reset)
+        return;      
+      if(power < 0) {
+        time = eval('1e'+power);
+        power++;
+      } else {
+        time += 1;
+      }
+      var gate = time/tick;
+      if((gate) > Math.pow(2, 32)) {
+        log('gate too large for ' + pwm.label() + ' with ' + time + 's');
+      }      
+      
+      var dtyc = 0.5*gate;
+      updates.push({path: pwm.dtyc.path(), value: Math.round(dtyc)});
+      updates.push({path: pwm.gate.path(), value: Math.round(gate)});
+      updates.push({path: pwm.outinv.path(), value: 0x0});
+      updates.push({path: pwm.reset.path(), value: 0x0});
+    });
+    debug(updates);    
+    ss.rpc('lophilo.multiwrite', updates, defaultCallback);
+  };
 }
 
 var model;
