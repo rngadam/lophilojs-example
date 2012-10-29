@@ -233,23 +233,29 @@ function LophiloModel(data) {
     },
     self);
   }
-
+  
+  function createMask(id) {
+    // there's some bit padding at bit 6 and 7
+    return 1 << (id <= 5 ? id: id + 2);
+  }
+  
   function makeComputedInOutBitfieldValue(objPath, target) {
     return ko.computed({
       'read': function() {
         var register = findObj(self, objPath);
         var bitfield = findObj(self, target);
-        return (1 << register.id() & bitfield.last()) !== 0;
+        return (createMask(register.id()) & bitfield.last()) !== 0;
       },
       'write': function(value) {
         var register = findObj(self, objPath);
         var bitfield = findObj(self, target);
         var newValue;
+        var mask = createMask(register.id());
         if (value) {
-          newValue = (1 << register.id()) | bitfield.last();
+          newValue = (mask) | bitfield.last();
         }
         else {
-          newValue = (~ (1 << register.id())) & bitfield.last();
+          newValue = (~ (mask)) & bitfield.last();
         }
         ss.rpc('lophilo.write', target, newValue, defaultCallback);
       }
@@ -325,7 +331,8 @@ function LophiloModel(data) {
   }
   
   function createBitfields(array) {
-    var bitfields = ['doe', 'din', 'dout', 'iclr', 'ie', 'iedge', 'iinv', 'imask'];
+    //var bitfields = ['doe', 'din', 'dout', 'iclr', 'ie', 'iedge', 'iinv', 'imask'];
+    var bitfields = ['doe', 'din', 'dout'];
 
     array.bitfields = [];
     for (var k in bitfields) {
